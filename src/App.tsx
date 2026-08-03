@@ -33,6 +33,20 @@ const STATUS_ORDER: PlantStatus[] = [
 
 type ViewMode = 'calendar' | 'details'
 
+function BloomaLogo({ size = 'md' }: { size?: 'md' | 'lg' }) {
+  return (
+    <a
+      className={`blooma-logo blooma-logo--${size}`}
+      href="https://bloomagrows.com"
+      target="_blank"
+      rel="noreferrer"
+    >
+      <img src="/blooma-icon.svg" alt="" width={48} height={48} />
+      <span>Blooma</span>
+    </a>
+  )
+}
+
 function App() {
   const [frostDate, setFrostDate] = useState(defaultFrostDate)
   const [seasonExtenders, setSeasonExtenders] = useState(false)
@@ -71,6 +85,7 @@ function App() {
       </div>
 
       <header className="hero">
+        <BloomaLogo size="lg" />
         <h1 className="hero__brand">Fall Garden Planting Calendar</h1>
         <p className="hero__lede">
           Enter your frost date and see when each fall crop should go in the
@@ -225,6 +240,11 @@ function App() {
           </ol>
         </section>
       </main>
+
+      <footer className="site-footer">
+        <BloomaLogo size="md" />
+        <p>Grown with care for fall gardens.</p>
+      </footer>
     </div>
   )
 }
