@@ -1,0 +1,101 @@
+:root {
+  --ink: #14261f;
+  --ink-soft: #3d564a;
+  --fog: #e8f0ea;
+  --mist: #d3e4d8;
+  --leaf: #aada6e;
+  --leaf-bright: #aada6e;
+  --moss: #aada6e;
+  --gold: #c4a35a;
+  --gold-deep: #8f7330;
+  --warm-warn: #b86b2e;
+  --cool-ok: #5f8f2e;
+  --closed: #6b5a4e;
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-solid: #f4faf5;
+  --line: rgba(20, 38, 31, 0.12);
+  --shadow: 0 18px 50px rgba(20, 38, 31, 0.1);
+
+  --font-display: 'Open Sans', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+
+  font-family: var(--font-body);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--fog);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+h1,
+h2,
+h3,
+.hero__brand {
+  font-weight: 700;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, -1.5%, 0) scale(1.04);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.7;
+  }
+}
