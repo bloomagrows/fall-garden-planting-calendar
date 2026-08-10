@@ -88,21 +88,8 @@ export async function lookupFrostByZip(
     throw new Error('Enter a 5-digit US zip code.')
   }
 
-  // Local Vite: call upstream directly. Production: Netlify function proxy.
-  if (import.meta.env.DEV) {
-    const response = await fetch(
-      `https://apis.joelgrant.dev/api/v1/frost/${zip}`,
-    )
-    if (!response.ok) {
-      throw new Error(
-        response.status === 404
-          ? 'No frost data found for that zip code.'
-          : 'Frost lookup service is unavailable. Try again or enter a date manually.',
-      )
-    }
-    return parseFrostApiPayload(zip, await response.json())
-  }
-
+  // Always hit /api/frost — Vite proxies locally; Netlify function in production.
+  // (Upstream frost API has no CORS headers, so the browser cannot call it directly.)
   const response = await fetch(`/api/frost?zip=${encodeURIComponent(zip)}`)
   const payload = (await response.json()) as FrostLookupResult & {
     error?: string
