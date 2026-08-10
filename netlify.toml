@@ -1,6 +1,12 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/frost"
+  to = "/.netlify/functions/frost"
+  status = 200
 
 [[redirects]]
   from = "/*"

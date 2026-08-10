@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties, type FormEvent } from 'react'
 import {
   CATEGORY_LABELS,
   HARDINESS_LABELS,
@@ -14,6 +14,7 @@ import {
   type PlantStatus,
   type PlantingSchedule,
 } from './lib/schedule'
+import { lookupFrostByZip } from './lib/frostLookup'
 import { PlantingCalendar } from './components/PlantingCalendar'
 import './App.css'
 
@@ -49,6 +50,11 @@ function BloomaLogo({ size = 'md' }: { size?: 'md' | 'lg' }) {
 
 function App() {
   const [frostDate, setFrostDate] = useState(defaultFrostDate)
+  const [zipCode, setZipCode] = useState('')
+  const [zipStatus, setZipStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
+    'idle',
+  )
+  const [zipMessage, setZipMessage] = useState('')
   const [seasonExtenders, setSeasonExtenders] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<PlantCategory | 'all'>(
     'all',
@@ -76,6 +82,39 @@ function App() {
 
   const plantNowCount = schedules.filter((s) => s.status === 'plant-now').length
 
+  async function handleZipLookup(event: FormEvent) {
+    event.preventDefault()
+    setZipStatus('loading')
+    setZipMessage('')
+    try {
+      const result = await lookupFrostByZip(zipCode)
+      const place = [result.city, result.state].filter(Boolean).join(', ')
+
+      if (result.frostFree || !result.frostDate) {
+        setZipStatus('success')
+        setZipMessage(
+          place
+            ? `${place} is typically frost-free. Keep or set a frost date manually if nights dip near freezing.`
+            : 'That area is typically frost-free. Set a frost date manually if needed.',
+        )
+        return
+      }
+
+      setFrostDate(result.frostDate)
+      setZipStatus('success')
+      setZipMessage(
+        place
+          ? `Using the average (50%) first frost for ${place}, based on NOAA climate normals. You can still adjust the date.`
+          : 'Using the average (50%) first frost from NOAA climate normals. You can still adjust the date.',
+      )
+    } catch (error) {
+      setZipStatus('error')
+      setZipMessage(
+        error instanceof Error ? error.message : 'ZIP lookup failed.',
+      )
+    }
+  }
+
   return (
     <div className="app">
       <div className="atmosphere" aria-hidden="true">
@@ -88,15 +127,53 @@ function App() {
         <BloomaLogo size="lg" />
         <h1 className="hero__brand">Fall Garden Planting Calendar</h1>
         <p className="hero__lede">
-          Enter your frost date and see when each fall crop should go in the
-          ground, accounting for heat bolting, days to harvest, and how hardy
-          each plant is past frost.
+          Enter your ZIP code or frost date and see when each fall crop should
+          go in the ground, accounting for heat bolting, days to harvest, and
+          how hardy each plant is past frost.
         </p>
 
         <form
           className="hero__controls"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={handleZipLookup}
         >
+          <div className="zip-row">
+            <label className="field">
+              <span className="field__label">ZIP code</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{5}"
+                maxLength={5}
+                placeholder="e.g. 10001"
+                value={zipCode}
+                onChange={(e) => {
+                  setZipCode(e.target.value.replace(/\D/g, '').slice(0, 5))
+                  if (zipStatus !== 'idle') {
+                    setZipStatus('idle')
+                    setZipMessage('')
+                  }
+                }}
+                autoComplete="postal-code"
+              />
+            </label>
+            <button
+              type="submit"
+              className="zip-lookup"
+              disabled={zipStatus === 'loading' || zipCode.length !== 5}
+            >
+              {zipStatus === 'loading' ? 'Looking up…' : 'Look up frost date'}
+            </button>
+          </div>
+
+          {zipMessage ? (
+            <p
+              className={`zip-message zip-message--${zipStatus}`}
+              role="status"
+            >
+              {zipMessage}
+            </p>
+          ) : null}
+
           <label className="field">
             <span className="field__label">First frost date</span>
             <input
@@ -105,6 +182,10 @@ function App() {
               onChange={(e) => setFrostDate(e.target.value)}
               required
             />
+            <span className="field__hint">
+              Auto-filled from ZIP using the NOAA average (50% chance of 32°F).
+              You can still edit it.
+            </span>
           </label>
 
           <label className="toggle">
@@ -217,6 +298,11 @@ function App() {
         <section className="how">
           <h2>How the dates are calculated</h2>
           <ol>
+            <li>
+              <strong>ZIP lookup</strong> pulls the average (50%) first 32°F
+              frost from NOAA climate normals for the nearest station. You can
+              always override the date afterward.
+            </li>
             <li>
               <strong>Season end</strong> = first frost + how many days past
               frost the plant still grows. Planting dates always use open-air
