@@ -14,6 +14,14 @@ export interface FrostLookupResult {
   frostFree?: boolean
 }
 
+/**
+ * Frost-free climates have no first-frost date. Use Dec 31 as a planning
+ * stand-in so planting windows still calculate; gardeners can edit it.
+ */
+export function frostFreeProxyDate(year = new Date().getFullYear()): string {
+  return `${year}-12-31`
+}
+
 function toIsoDate(monthDay: string, year: number): string | null {
   const match = /^(\d{1,2})\/(\d{1,2})$/.exec(monthDay.trim())
   if (!match) return null
@@ -48,13 +56,17 @@ export function parseFrostApiPayload(
     throw new Error('Unexpected frost API response.')
   }
 
+  const place = {
+    city: data.location?.city,
+    state: data.location?.state,
+    stationName: data.weather_station?.name,
+  }
+
   if (data.frost_free) {
     return {
       zip,
-      frostDate: '',
-      city: data.location?.city,
-      state: data.location?.state,
-      stationName: data.weather_station?.name,
+      frostDate: frostFreeProxyDate(year),
+      ...place,
       probability: '50%',
       frostFree: true,
     }
@@ -62,7 +74,14 @@ export function parseFrostApiPayload(
 
   const median = data.frost_dates?.first_frost_32f?.['50%']
   if (!median) {
-    throw new Error('No first-frost date found for that zip.')
+    // Some stations report no median frost — treat like frost-free
+    return {
+      zip,
+      frostDate: frostFreeProxyDate(year),
+      ...place,
+      probability: '50%',
+      frostFree: true,
+    }
   }
 
   const frostDate = toIsoDate(median, year)
@@ -73,9 +92,7 @@ export function parseFrostApiPayload(
   return {
     zip,
     frostDate,
-    city: data.location?.city,
-    state: data.location?.state,
-    stationName: data.weather_station?.name,
+    ...place,
     probability: '50%',
   }
 }
@@ -99,13 +116,14 @@ export async function lookupFrostByZip(
     throw new Error(payload.error || 'Could not look up frost date for that zip.')
   }
 
+  const frostFree = Boolean(payload.frostFree)
   return {
     zip,
-    frostDate: payload.frostDate || '',
+    frostDate: payload.frostDate || (frostFree ? frostFreeProxyDate() : ''),
     city: payload.city,
     state: payload.state,
     stationName: payload.stationName,
     probability: '50%',
-    frostFree: Boolean(payload.frostFree),
+    frostFree,
   }
 }

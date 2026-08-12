@@ -77,7 +77,7 @@ export default defineConfig({
                 if (data.frost_free) {
                   writeJson(200, {
                     zip,
-                    frostDate: '',
+                    frostDate: `${new Date().getFullYear()}-12-31`,
                     frostFree: true,
                     city: data.location?.city,
                     state: data.location?.state,
@@ -92,8 +92,15 @@ export default defineConfig({
                   ? toIsoDate(median, new Date().getFullYear())
                   : null
                 if (!frostDate) {
-                  writeJson(502, {
-                    error: 'Could not parse first-frost date.',
+                  // No median frost date — same planning stand-in as frost-free
+                  writeJson(200, {
+                    zip,
+                    frostDate: `${new Date().getFullYear()}-12-31`,
+                    frostFree: true,
+                    city: data.location?.city,
+                    state: data.location?.state,
+                    stationName: data.weather_station?.name,
+                    probability: '50%',
                   })
                   return
                 }

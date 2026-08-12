@@ -14,7 +14,7 @@ import {
   type PlantStatus,
   type PlantingSchedule,
 } from './lib/schedule'
-import { lookupFrostByZip } from './lib/frostLookup'
+import { frostFreeProxyDate, lookupFrostByZip } from './lib/frostLookup'
 import { PlantingCalendar } from './components/PlantingCalendar'
 import './App.css'
 
@@ -91,11 +91,13 @@ function App() {
       const place = [result.city, result.state].filter(Boolean).join(', ')
 
       if (result.frostFree || !result.frostDate) {
+        const proxy = result.frostDate || frostFreeProxyDate()
+        setFrostDate(proxy)
         setZipStatus('success')
         setZipMessage(
           place
-            ? `${place} is typically frost-free. Keep or set a frost date manually if nights dip near freezing.`
-            : 'That area is typically frost-free. Set a frost date manually if needed.',
+            ? `${place} is typically frost-free. Using Dec 31 as a planning date so your planting windows still populate — adjust if nights dip near freezing.`
+            : 'That area is typically frost-free. Using Dec 31 as a planning date so your planting windows still populate — adjust if needed.',
         )
         return
       }
@@ -300,8 +302,10 @@ function App() {
           <ol>
             <li>
               <strong>ZIP lookup</strong> pulls the average (50%) first 32°F
-              frost from NOAA climate normals for the nearest station. You can
-              always override the date afterward.
+              frost from NOAA climate normals for the nearest station. In
+              typically frost-free areas, Dec 31 is used as a planning
+              stand-in so planting windows still populate — you can always
+              override the date.
             </li>
             <li>
               <strong>Season end</strong> = first frost + how many days past

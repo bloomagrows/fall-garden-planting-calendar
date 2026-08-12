@@ -14,6 +14,11 @@ function toIsoDate(monthDay, year) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
+/** Planning stand-in when NOAA has no first frost for the zip. */
+function frostFreeProxyDate(year = new Date().getFullYear()) {
+  return `${year}-12-31`
+}
+
 function json(statusCode, body) {
   return {
     statusCode,
@@ -54,22 +59,24 @@ export async function handler(event) {
       return json(502, { error: 'Unexpected frost API response.' })
     }
 
-    if (data.frost_free) {
-      return json(200, {
-        zip,
-        frostDate: '',
-        frostFree: true,
-        city: data.location?.city,
-        state: data.location?.state,
-        stationName: data.weather_station?.name,
-        probability: '50%',
-        error:
-          'This zip is typically frost-free — enter a frost date manually if you still want a schedule.',
-      })
+    const year = new Date().getFullYear()
+    const place = {
+      city: data.location?.city,
+      state: data.location?.state,
+      stationName: data.weather_station?.name,
     }
 
     const median = data.frost_dates?.first_frost_32f?.['50%']
-    const year = new Date().getFullYear()
+    if (data.frost_free || !median) {
+      return json(200, {
+        zip,
+        frostDate: frostFreeProxyDate(year),
+        frostFree: true,
+        ...place,
+        probability: '50%',
+      })
+    }
+
     const frostDate = toIsoDate(median, year)
     if (!frostDate) {
       return json(502, { error: 'Could not parse first-frost date.' })
@@ -78,9 +85,7 @@ export async function handler(event) {
     return json(200, {
       zip,
       frostDate,
-      city: data.location?.city,
-      state: data.location?.state,
-      stationName: data.weather_station?.name,
+      ...place,
       probability: '50%',
     })
   } catch {
