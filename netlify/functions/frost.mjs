@@ -24,7 +24,7 @@ function json(statusCode, body) {
     statusCode,
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=86400',
+      'Cache-Control': 'public, max-age=3600',
     },
     body: JSON.stringify(body),
   }
