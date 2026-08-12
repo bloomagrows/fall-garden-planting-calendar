@@ -61,6 +61,7 @@ function App() {
   )
   const [statusFilter, setStatusFilter] = useState<PlantStatus | 'all'>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('calendar')
+  const [plantSearch, setPlantSearch] = useState('')
 
   const schedules = useMemo(() => {
     if (!frostDate) return []
@@ -69,6 +70,7 @@ function App() {
   }, [frostDate, seasonExtenders])
 
   const filtered = useMemo(() => {
+    const query = plantSearch.trim().toLowerCase()
     return schedules.filter((s) => {
       if (categoryFilter !== 'all' && s.plant.category !== categoryFilter) {
         return false
@@ -76,9 +78,20 @@ function App() {
       if (statusFilter !== 'all' && s.status !== statusFilter) {
         return false
       }
+      if (query) {
+        const haystack = [
+          s.plant.name,
+          s.plant.notes,
+          CATEGORY_LABELS[s.plant.category],
+          s.plant.plantFrom,
+        ]
+          .join(' ')
+          .toLowerCase()
+        if (!haystack.includes(query)) return false
+      }
       return true
     })
-  }, [schedules, categoryFilter, statusFilter])
+  }, [schedules, categoryFilter, statusFilter, plantSearch])
 
   const plantNowCount = schedules.filter((s) => s.status === 'plant-now').length
 
@@ -227,57 +240,70 @@ function App() {
           </div>
         </section>
 
-        <section className="toolbar">
-          <div className="view-toggle" role="group" aria-label="View mode">
-            <button
-              type="button"
-              className={viewMode === 'calendar' ? 'is-active' : undefined}
-              onClick={() => setViewMode('calendar')}
-            >
-              Calendar
-            </button>
-            <button
-              type="button"
-              className={viewMode === 'details' ? 'is-active' : undefined}
-              onClick={() => setViewMode('details')}
-            >
-              Crop details
-            </button>
+        <section className="toolbar" aria-label="Filter crops">
+          <label className="field field--search">
+            <span className="field__label">Search plants</span>
+            <input
+              type="search"
+              placeholder="Search by name, category, or notes…"
+              value={plantSearch}
+              onChange={(e) => setPlantSearch(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
+
+          <div className="toolbar__filters">
+            <div className="view-toggle" role="group" aria-label="View mode">
+              <button
+                type="button"
+                className={viewMode === 'calendar' ? 'is-active' : undefined}
+                onClick={() => setViewMode('calendar')}
+              >
+                Calendar
+              </button>
+              <button
+                type="button"
+                className={viewMode === 'details' ? 'is-active' : undefined}
+                onClick={() => setViewMode('details')}
+              >
+                Crop details
+              </button>
+            </div>
+
+            <label className="field field--compact">
+              <span className="field__label">Category</span>
+              <select
+                value={categoryFilter}
+                onChange={(e) =>
+                  setCategoryFilter(e.target.value as PlantCategory | 'all')
+                }
+              >
+                <option value="all">All crops</option>
+                {Object.entries(CATEGORY_LABELS).map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field field--compact">
+              <span className="field__label">Status</span>
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as PlantStatus | 'all')
+                }
+              >
+                <option value="all">All statuses</option>
+                {STATUS_ORDER.map((status) => (
+                  <option key={status} value={status}>
+                    {STATUS_LABELS[status]}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-
-          <label className="field field--compact">
-            <span className="field__label">Category</span>
-            <select
-              value={categoryFilter}
-              onChange={(e) =>
-                setCategoryFilter(e.target.value as PlantCategory | 'all')
-              }
-            >
-              <option value="all">All crops</option>
-              {Object.entries(CATEGORY_LABELS).map(([id, label]) => (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="field field--compact">
-            <span className="field__label">Status</span>
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as PlantStatus | 'all')
-              }
-            >
-              <option value="all">All statuses</option>
-              {STATUS_ORDER.map((status) => (
-                <option key={status} value={status}>
-                  {STATUS_LABELS[status]}
-                </option>
-              ))}
-            </select>
-          </label>
         </section>
 
         {viewMode === 'calendar' ? (
@@ -292,7 +318,7 @@ function App() {
               />
             ))}
             {filtered.length === 0 && (
-              <p className="empty">No plants match these filters.</p>
+              <p className="empty">No plants match your search or filters.</p>
             )}
           </section>
         )}

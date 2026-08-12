@@ -308,12 +308,21 @@
 
 .toolbar {
   display: grid;
-  grid-template-columns: auto repeat(2, minmax(0, 1fr));
   gap: 0.85rem;
-  align-items: end;
   margin-bottom: 1.25rem;
   animation: rise-in 0.7s ease both;
   animation-delay: 0.16s;
+}
+
+.toolbar__filters {
+  display: grid;
+  grid-template-columns: auto repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.field--search input {
+  width: 100%;
 }
 
 .view-toggle {
@@ -517,6 +526,10 @@
   }
 
   .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar__filters {
     grid-template-columns: 1fr;
   }
 
